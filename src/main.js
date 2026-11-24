@@ -1,18 +1,91 @@
+import "./style.css";
 import { supabase } from "./supabase.js";
+import { APP_NAME, BAND_NAME } from "./setlist.js";
 
 const app = document.querySelector("#app");
+let songs = [];
+
+// Makes sure song text can't be treated as HTML.
+const esc = (s) =>
+    String(s).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+
+// Who plays next: the most recently boosted song wins.
+// If nobody has paid to boost, the most-voted song wins.
+function pickNext() {
+    const boosted = songs
+        .filter((s) => s.boosted_at)
+        .sort((a, b) => new Date(b.boosted_at) - new Date(a.boosted_at));
+    return boosted[0] ?? songs[0];
+}
+
+function render() {
+    if (!songs.length) {
+        app.innerHTML = `<p class="muted">Loading…</p>`;
+        return;
+    }
+
+    const next = pickNext();
+    const rest = songs.filter((s) => s.id !== next.id);
+    const max = Math.max(1, ...songs.map((s) => s.votes));
+
+    app.innerHTML = `
+    <div class="topbar">
+      <h1>${esc(APP_NAME)}</h1>
+      <div class="chip">0 votes</div>
+    </div>
+    <div class="muted">${esc(BAND_NAME)}</div>
+
+    <div class="hero">
+      <div class="label">NEXT UP · ${next.votes} VOTES</div>
+      <div class="title">${esc(next.title)}</div>
+      <div class="sub">${esc(next.artist)}</div>
+    </div>
+
+    <div class="muted">THE CROWD IS BIDDING ON</div>
+
+    ${rest.map((s) => `
+      <div class="card">
+        <div class="row">
+          <div>
+            <div class="name">${esc(s.title)}</div>
+            <div class="muted">${esc(s.artist)}</div>
+          </div>
+          <div class="total">${s.votes}</div>
+        </div>
+        <div class="bar"><div style="width:${(s.votes / max) * 100}%"></div></div>
+        <div class="buttons">
+          <button data-action="vote" data-id="${esc(s.id)}">Vote</button>
+          <button class="secondary" data-action="boost" data-id="${esc(s.id)}">Play next</button>
+        </div>
+      </div>
+    `).join("")}
+
+    <button class="buy" data-action="buy">Buy more votes</button>
+  `;
+}
+
+// One click listener for every button on the page.
+app.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    alert("Payments coming in Step 4! (" + btn.dataset.action + ")");
+});
 
 async function load() {
     const { data, error } = await supabase
         .from("songs")
         .select("*")
-        .order("votes", { ascending: false });
+        .order("votes", { ascending: false })
+        .order("title", { ascending: true });
 
     if (error) {
         app.textContent = "Error: " + error.message;
         return;
     }
-    app.innerHTML = data.map((s) => `<p>${s.title}: ${s.votes}</p>`).join("");
+    songs = data;
+    render();
 }
 
 load();
