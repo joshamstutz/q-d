@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "sync": "node --env-file=.env scripts/sync-setlist.js",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
