@@ -150,7 +150,7 @@ function render() {
     app.innerHTML = `
     <div class="topbar">
       <h1>${esc(APP_NAME)}</h1>
-      <button class="chip" data-action="buy">${balance} q's +</button>
+      <button class="chip buy-now" data-action="buy">${balance} q's · Get more</button>
     </div>
     <div class="muted">${esc(BAND_NAME)}</div>
 
@@ -161,8 +161,6 @@ function render() {
 
     <div class="muted">VOTE FREE · QUEUE OR ASAP WITH Q'S</div>
     ${songCards || `<p class="muted">Every song is queued!</p>`}
-
-    <button class="buy" data-action="buy">Get more q's</button>
   `;
     requestAnimationFrame(() => requestAnimationFrame(() => {
         app.querySelectorAll(".fill").forEach((el) => {
