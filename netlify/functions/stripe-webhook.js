@@ -17,6 +17,12 @@ export default async (req) => {
             process.env.STRIPE_WEBHOOK_SECRET
         );
     } catch (err) {
+        console.error(
+            "Webhook verify failed:", err.message,
+            "| secret set:", Boolean(process.env.STRIPE_WEBHOOK_SECRET),
+            "| secret length:", (process.env.STRIPE_WEBHOOK_SECRET || "").length,
+            "| signature header present:", Boolean(signature)
+        );
         return new Response("Bad signature", { status: 400 });
     }
 
